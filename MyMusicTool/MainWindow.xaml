@@ -1,0 +1,650 @@
+﻿<Window x:Class="MyMusicTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
+        xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
+        xmlns:controls="clr-namespace:MyMusicTool.Controls"
+        Title="LightMusic"
+        Width="1120"
+        Height="740"
+        MinWidth="860"
+        MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        Drop="Window_Drop"
+        Background="#F6F8FA"
+        FontFamily="Microsoft YaHei UI, Segoe UI">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="0" CornerRadius="0" CaptionHeight="32" ResizeBorderThickness="5"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- 顶部导航标签样式 -->
+        <Style x:Key="NavTabStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#64748B" />
+            <Setter Property="FontSize" Value="15.5" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Margin" Value="0,0,22,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="Transparent" Padding="2,6">
+                            <TextBlock x:Name="TabText"
+                                       Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="TabText" Property="Foreground" Value="#1E293B" />
+                                <Setter TargetName="TabText" Property="FontWeight" Value="Bold" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabText" Property="Foreground" Value="#1E293B" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 扁平轻量化工具按钮 -->
+        <Style x:Key="FlatActionBtnStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#334155" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E2E8F0" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="#E2E8F0" BorderThickness="1" Background="#F6F8FA">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="56" />
+                <!-- 顶部导航与搜索栏 -->
+                <RowDefinition Height="44" />
+                <!-- 次级操作与排序栏 -->
+                <RowDefinition Height="*" />
+                <!-- 中部主视图区 -->
+                <RowDefinition Height="96" />
+                <!-- 底部动态取色控制栏 -->
+            </Grid.RowDefinitions>
+
+            <!-- ==================== 1. 顶部导航与搜索栏 ==================== -->
+            <Grid Grid.Row="0" Margin="24,6,14,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 左侧分类标签 -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <RadioButton x:Name="TabAlbums" Content="{DynamicResource Nav_Albums}" Style="{StaticResource NavTabStyle}" IsChecked="True" Click="NavTab_Click" />
+                    <RadioButton x:Name="TabSongs" Content="{DynamicResource Nav_Songs}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
+                    <RadioButton x:Name="TabArtists" Content="{DynamicResource Nav_Artists}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
+                    <RadioButton x:Name="TabFolders" Content="{DynamicResource Nav_Folders}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
+                    <RadioButton x:Name="TabQueue" Content="{DynamicResource Nav_Queue}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
+                </StackPanel>
+
+                <!-- 右侧搜索框 + 功能与窗口控制按钮 -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- 圆角搜索框 -->
+                    <Border Background="#EAEFF4"
+                            CornerRadius="10"
+                            Width="220"
+                            Height="34"
+                            Margin="0,0,10,0"
+                            Padding="10,0"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="SearchBox"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     VerticalContentAlignment="Center"
+                                     FontSize="13"
+                                     Foreground="#1E293B"
+                                     materialDesign:HintAssist.Hint="{DynamicResource Hint_Search}"
+                                     TextChanged="SearchBox_TextChanged" />
+                            <materialDesign:PackIcon Grid.Column="1"
+                                                     Kind="Magnify"
+                                                     Width="17" Height="17"
+                                                     Foreground="#64748B"
+                                                     VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 添加音乐文件夹 -->
+                    <Button Style="{StaticResource FlatActionBtnStyle}"
+                            ToolTip="{DynamicResource Btn_AddFolderPlus}"
+                            Click="AddFolder_Click">
+                        <materialDesign:PackIcon Kind="FolderPlus" Width="19" Height="19" />
+                    </Button>
+                   
+                    <Button x:Name="LangToggleBtn"
+        Style="{StaticResource FlatActionBtnStyle}"
+        ToolTip="切换语言 / Switch Language"
+        Click="LangToggleBtn_Click"
+        Margin="2,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Translate" Width="17" Height="17" Margin="0,0,4,0" />
+                            <TextBlock x:Name="LangBtnText" Text="EN" FontSize="12" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+                    <!-- 任务栏歌词微调设置按钮 -->
+                    <Button x:Name="LyricOffsetBtn"
+                            Style="{StaticResource FlatActionBtnStyle}"
+                            ToolTip="{DynamicResource Tip_LyricSettings}"
+                            Click="LyricOffsetBtn_Click">
+                        <materialDesign:PackIcon Kind="Cog" Width="19" Height="19" />
+                    </Button>
+
+                    <!-- 歌词位置微调弹出面板 -->
+                    <Popup x:Name="LyricOffsetPopup"
+                           PlacementTarget="{Binding ElementName=LyricOffsetBtn}"
+                           Placement="Bottom"
+                           StaysOpen="False"
+                           AllowsTransparency="True">
+                        <Border Background="White"
+                                BorderBrush="#CBD5E1"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="16"
+                                Width="280"
+                                Margin="0,4,0,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource LyricSet_Title}" FontWeight="Bold" FontSize="13.5" Foreground="#1E293B" Margin="0,0,0,12" />
+
+                                <TextBlock Text="{DynamicResource LyricSet_Font}" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                <ComboBox x:Name="LyricFontCombo"
+                                          FontSize="12.5"
+                                          MaxDropDownHeight="220"
+                                          SelectionChanged="LyricSetting_Changed"
+                                          Margin="0,0,0,10" />
+
+                                <Grid Margin="0,0,0,8">
+                                    <TextBlock Text="{DynamicResource LyricSet_FontSize}" FontSize="12" Foreground="#64748B" VerticalAlignment="Center" />
+                                    <Slider x:Name="LyricFontSizeSlider" Width="150" HorizontalAlignment="Right" Minimum="11" Maximum="20" Value="13.5" ValueChanged="LyricSetting_Changed" />
+                                </Grid>
+
+                                <Grid Margin="0,0,0,10">
+                                    <TextBlock Text="{DynamicResource LyricSet_BgOpacity}" FontSize="12" Foreground="#64748B" VerticalAlignment="Center" />
+                                    <Slider x:Name="LyricOpacitySlider" Width="150" HorizontalAlignment="Right" Minimum="0" Maximum="1" Value="0.8" ValueChanged="LyricSetting_Changed" />
+                                </Grid>
+
+                                <CheckBox x:Name="LyricColorProgressCheck"
+                                          Content="{DynamicResource LyricSet_ColorProgress}"
+                                          FontSize="12.5"
+                                          Foreground="#334155"
+                                          IsChecked="True"
+                                          Checked="LyricSetting_Changed"
+                                          Unchecked="LyricSetting_Changed"
+                                          Margin="0,0,0,6" />
+
+                                <CheckBox x:Name="LyricShowCoverCheck"
+                                          Content="{DynamicResource LyricSet_ShowCover}"
+                                          FontSize="12.5"
+                                          Foreground="#334155"
+                                          IsChecked="True"
+                                          Checked="LyricSetting_Changed"
+                                          Unchecked="LyricSetting_Changed"
+                                          Margin="0,0,0,12" />
+
+                                <Border Height="1" Background="#E2E8F0" Margin="0,0,0,10" />
+
+                                <TextBlock Text="{DynamicResource LyricSet_OffsetX}" FontSize="12" Foreground="#64748B" />
+                                <Slider x:Name="OffsetXSlider" Minimum="-150" Maximum="900" Value="0" ValueChanged="LyricSetting_Changed" Margin="0,2,0,8" />
+                                <TextBlock Text="{DynamicResource LyricSet_OffsetY}" FontSize="12" Foreground="#64748B" />
+                                <Slider x:Name="OffsetYSlider" Minimum="-60" Maximum="40" Value="0" ValueChanged="LyricSetting_Changed" />
+                                
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
+                    <Border Width="1" Height="16" Background="#CBD5E1" Margin="6,0" />
+
+                    <!-- 隐藏到系统托盘（保持后台极低内存听歌） -->
+                    <Button Style="{StaticResource FlatActionBtnStyle}"
+                            ToolTip="{DynamicResource Tip_MinimizeToTray}"
+                            Click="MinimizeToTray_Click">
+                        <materialDesign:PackIcon Kind="ArrowBottomRight" Width="18" Height="18" />
+                    </Button>
+
+                    <!-- 最小化 -->
+                    <Button Style="{StaticResource FlatActionBtnStyle}" ToolTip="{DynamicResource Tip_Minimize}" Click="Minimize_Click">
+                        <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16" />
+                    </Button>
+
+                    <!-- 最大化/还原 -->
+                    <Button Style="{StaticResource FlatActionBtnStyle}" ToolTip="{DynamicResource Tip_Maximize}" Click="Maximize_Click">
+                        <materialDesign:PackIcon Kind="WindowMaximize" Width="15" Height="15" />
+                    </Button>
+
+                    <!-- 关闭退出 -->
+                    <Button Style="{StaticResource FlatActionBtnStyle}" ToolTip="{DynamicResource Tip_Exit}" Click="Close_Click">
+                        <materialDesign:PackIcon Kind="Close" Width="17" Height="17" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ==================== 2. 次级操作与排序栏 ==================== -->
+            <Grid Grid.Row="1" Margin="24,0,24,4">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BackBtn"
+                            Visibility="Collapsed"
+                            Style="{StaticResource FlatActionBtnStyle}"
+                            Margin="0,0,8,0"
+                            Click="BackBtn_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ArrowLeft" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0" />
+                            <TextBlock x:Name="BackBtnTitle" Text="{DynamicResource Btn_Back}" FontWeight="SemiBold" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource FlatActionBtnStyle}" Click="PlayAll_Click" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Play" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,4,0" />
+                            <TextBlock Text="{DynamicResource Btn_PlayAll}" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource FlatActionBtnStyle}" Click="ShuffleAll_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Shuffle" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0" />
+                            <TextBlock Text="{DynamicResource Btn_ShuffleAll}" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- 右侧排序选项 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{DynamicResource Label_SortBy}" FontSize="12.5" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox x:Name="SortByCombo"
+                              SelectedIndex="0"
+                              FontSize="12.5"
+                              BorderThickness="0"
+                              Background="Transparent"
+                              SelectionChanged="SortOption_Changed"
+                              Margin="0,0,12,0">
+                        <ComboBoxItem Content="A - Z" />
+                        <ComboBoxItem Content="{DynamicResource Sort_Year}" />
+                        <ComboBoxItem Content="{DynamicResource Sort_Artist}" />
+                    </ComboBox>
+
+                    <TextBlock Text="{DynamicResource Label_SortOrder}" FontSize="12.5" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox x:Name="SortOrderCombo"
+                              SelectedIndex="0"
+                              FontSize="12.5"
+                              BorderThickness="0"
+                              Background="Transparent"
+                              SelectionChanged="SortOption_Changed">
+                        <ComboBoxItem Content="{DynamicResource Order_Asc}" />
+                        <ComboBoxItem Content="{DynamicResource Order_Desc}" />
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <!-- ==================== 3. 中部主视图区 ==================== -->
+            <Grid Grid.Row="2" Margin="18,0,12,4">
+                <!-- 3A. 空曲库引导提示 -->
+                <StackPanel x:Name="EmptyStatePanel"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="Visible">
+                    <materialDesign:PackIcon Kind="FolderMusic" Width="56" Height="56" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Empty_Title}" FontSize="16" FontWeight="SemiBold" Foreground="#334155" HorizontalAlignment="Center" Margin="0,12,0,4" />
+                    <TextBlock Text="{DynamicResource Empty_Subtitle}" FontSize="13" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                    <Button Content="{DynamicResource Btn_SelectFolder}"
+                            Style="{StaticResource MaterialDesignFlatMidBgButton}"
+                            materialDesign:ButtonAssist.CornerRadius="10"
+                            Height="38"
+                            Padding="20,0"
+                            HorizontalAlignment="Center"
+                            Click="AddFolder_Click" />
+                </StackPanel>
+
+                <!-- 3B. 虚拟化专辑封面墙（核心视图） -->
+                <ListBox x:Name="AlbumsGridView"
+                         Visibility="Collapsed"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         SelectionChanged="AlbumsGridView_SelectionChanged">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vwp:VirtualizingWrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="6" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="CardBorder"
+                                                Width="148"
+                                                Background="#EEF2F6"
+                                                BorderBrush="#E2E8F0"
+                                                BorderThickness="1"
+                                                CornerRadius="12"
+                                                Padding="6,6,6,8">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="CardBorder" Property="Background" Value="#E2E8F0" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <!-- 1:1 正方形圆角封面 -->
+                                <Border Width="134" Height="134" CornerRadius="10" Background="#DCE3EA" ClipToBounds="True">
+                                    <Grid>
+                                        <materialDesign:PackIcon Kind="MusicNote"
+                                                                 Width="36" Height="36"
+                                                                 Foreground="#94A3B8"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center" />
+                                        <Image Source="{Binding CoverThumbnail}"
+                                               Stretch="UniformToFill"
+                                               RenderOptions.BitmapScalingMode="LowQuality" />
+                                    </Grid>
+                                </Border>
+                                <!-- 专辑名 -->
+                                <TextBlock Text="{Binding Title}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12.5"
+                                           Foreground="#1E293B"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="2,7,2,2" />
+                                <!-- 歌手 • 年份 -->
+                                <TextBlock Text="{Binding Subtitle}"
+                                           FontSize="11"
+                                           Foreground="#64748B"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="2,0,2,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 3C. 虚拟化歌曲列表视图（用于“歌曲”、专辑详情、播放队列） -->
+                <ListBox x:Name="SongsListView"
+                         Visibility="Collapsed"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         MouseDoubleClick="SongsListView_MouseDoubleClick">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="12,8" />
+                            <Setter Property="Margin" Value="4,2" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="RowBd" Background="Transparent" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="RowBd" Property="Background" Value="#EAEFF4" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="RowBd" Property="Background" Value="#E2E8F0" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2.2*" />
+                                    <ColumnDefinition Width="1.4*" />
+                                    <ColumnDefinition Width="1.5*" />
+                                    <ColumnDefinition Width="65" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="#1E293B" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="{Binding Artist}" FontSize="12.5" Foreground="#475569" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding Album}" FontSize="12.5" Foreground="#64748B" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="3" Text="{Binding DurationText}" FontSize="12" Foreground="#64748B" HorizontalAlignment="Right" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 3D. 歌手列表视图 -->
+                <ListBox x:Name="ArtistsListView"
+                         Visibility="Collapsed"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         SelectionChanged="ArtistsListView_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="12,8" CornerRadius="8">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="AccountMusic" Width="22" Height="22" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                    <TextBlock Text="{Binding}" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 3E. 文件夹管理视图 -->
+                <StackPanel x:Name="FoldersView" Visibility="Collapsed" Margin="8">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Button Content="{DynamicResource Btn_AddFolderPlus}"
+                                Style="{StaticResource MaterialDesignFlatMidBgButton}"
+                                materialDesign:ButtonAssist.CornerRadius="8"
+                                Click="AddFolder_Click"
+                                Margin="0,0,10,0" />
+                        <Button Content="{DynamicResource Btn_RescanFolders}"
+                                Style="{StaticResource FlatActionBtnStyle}"
+                                Click="RescanFolders_Click" />
+                    </StackPanel>
+                    <ListBox x:Name="FolderPathsListBox" BorderThickness="0" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#EEF2F6" CornerRadius="8" Padding="12,8" Margin="0,3">
+                                    <Grid>
+                                        <TextBlock Text="{Binding}" FontSize="13" Foreground="#334155" VerticalAlignment="Center" />
+                                        <Button HorizontalAlignment="Right"
+                                                Style="{StaticResource FlatActionBtnStyle}"
+                                                Tag="{Binding}"
+                                                Click="RemoveFolder_Click"
+                                                ToolTip="{DynamicResource Tip_RemoveFolder}">
+                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="17" Height="17" Foreground="#EF4444" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Grid>
+
+            <!-- ==================== 4. 底部 Material You 动态取色播放栏 ==================== -->
+            <Border x:Name="BottomBarBorder"
+        Grid.Row="3"
+        Background="#E8EEF3"
+        BorderBrush="#DCE4EC"
+        BorderThickness="0,1,0,0"
+        Padding="24,10"
+        Cursor="Hand"
+        MouseLeftButtonUp="BottomBarBorder_MouseLeftButtonUp">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 左侧：封面 + 歌名 + 歌手 + 采样率音质参数 -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="68" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Width="64" Height="64" CornerRadius="10" Background="#CBD5E1" ClipToBounds="True">
+                            <Grid>
+                                <materialDesign:PackIcon Kind="MusicNote" Width="28" Height="28" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Image x:Name="NowPlayingCover" Stretch="UniformToFill" />
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,8,0">
+                            <TextBlock x:Name="NowPlayingTitle"
+                           Text="{DynamicResource Status_NotPlaying}"
+                           FontWeight="Bold"
+                           FontSize="15"
+                           Foreground="#0F172A"
+                           TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="NowPlayingArtist"
+                           Text="{DynamicResource Status_SelectToStart}"
+                           FontSize="13"
+                           Foreground="#475569"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="0,2,0,3" />
+                            <TextBlock x:Name="NowPlayingAudioInfo"
+                           Text="LOCAL • PURE AUDIO"
+                           FontSize="11.5"
+                           Foreground="#64748B"
+                           TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- 中间：播放控制按钮 + 进度条 -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" MaxWidth="580">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                            <Button x:Name="ShuffleBtn" Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="{DynamicResource Btn_Shuffle}" Click="ShuffleToggle_Click" Margin="6,0">
+                                <materialDesign:PackIcon x:Name="ShuffleIcon" Kind="Shuffle" Width="20" Height="20" Foreground="#64748B" />
+                            </Button>
+
+                            <Button Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="上一首" Click="Prev_Click" Margin="6,0">
+                                <materialDesign:PackIcon Kind="SkipPrevious" Width="25" Height="25" />
+                            </Button>
+
+                            <!-- MD3 动态形变播放/暂停主按钮 -->
+                            <controls:GoogleMorphPlayButton x:Name="PlayPauseBtn"
+                                                Width="50"
+                                                Height="50"
+                                                Margin="10,0"
+                                                Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}"
+                                                Click="PlayPause_Click">
+                                <materialDesign:PackIcon x:Name="PlayPauseIcon" Kind="Play" Width="26" Height="26" />
+                            </controls:GoogleMorphPlayButton>
+
+                            <Button Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="{DynamicResource Tip_Next}" Click="Next_Click" Margin="6,0">
+                                <materialDesign:PackIcon Kind="SkipNext" Width="25" Height="25" />
+                            </Button>
+
+                            <Button x:Name="RepeatBtn" Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="{DynamicResource Tip_Repeat}" Click="RepeatToggle_Click" Margin="6,0">
+                                <materialDesign:PackIcon x:Name="RepeatIcon" Kind="Repeat" Width="20" Height="20" />
+                            </Button>
+                        </StackPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="46" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="46" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="CurrentTimeText" Text="00:00" FontSize="12" Foreground="#475569" VerticalAlignment="Center" />
+                            <controls:ExpressiveProgressSlider x:Name="ProgressSlider"
+                                                   Grid.Column="1"
+                                                   Height="22"
+                                                   Minimum="0"
+                                                   Maximum="100"
+                                                   Value="0"
+                                                   LineStyle="Wavy"
+                                                   ActiveBrush="#1E293B"
+                                                   InactiveBrush="#CBD5E1"
+                                                   ThumbBrush="#1E293B"
+                                                   Cursor="Hand"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0"
+                                                   ValueChanged="ProgressSlider_ValueChanged" />
+                            <TextBlock x:Name="TotalTimeText" Grid.Column="2" Text="00:00" FontSize="12" Foreground="#475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- 右侧：播放队列 + 任务栏歌词开关 + 音量滑块 -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="{DynamicResource Tip_CurrentQueue}" Click="QuickQueue_Click">
+                            <materialDesign:PackIcon Kind="PlaylistMusic" Width="22" Height="22" />
+                        </Button>
+
+                        <Button x:Name="LyricToggleBtn" Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="{DynamicResource Tip_ToggleTaskbarLyric}" Click="LyricToggle_Click" Margin="4,0">
+                            <materialDesign:PackIcon x:Name="LyricToggleIcon" Kind="SubtitlesOutline" Width="22" Height="22" />
+                        </Button>
+
+                        <Button Style="{StaticResource FlatActionBtnStyle}" Padding="10,8" ToolTip="{DynamicResource Tip_Mute}" Click="Mute_Click" Margin="4,0">
+                            <materialDesign:PackIcon x:Name="VolumeIcon" Kind="VolumeHigh" Width="22" Height="22" />
+                        </Button>
+
+                        <Slider x:Name="VolumeSlider"
+                    Width="96"
+                    Minimum="0"
+                    Maximum="1"
+                    Value="0.8"
+                    VerticalAlignment="Center"
+                    ValueChanged="VolumeSlider_ValueChanged" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <!-- 全屏播放页容器（未打开时不实例化内容，关闭 20 秒后自动释放内存） -->
+            <ContentControl x:Name="FullPlayerHost"
+    Grid.RowSpan="4"
+    Visibility="Collapsed"
+    Panel.ZIndex="50" />
+        </Grid>
+    </Border>
+</Window>
