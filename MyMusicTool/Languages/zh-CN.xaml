@@ -82,5 +82,32 @@
     <sys:String x:Key="Tip_Fullscreen">全屏 / 退出全屏 (F11 / Esc)</sys:String>
     <sys:String x:Key="Fmt_QueueCount">播放队列 ({0})</sys:String>
     <sys:String x:Key="Btn_ClearQueue">清空</sys:String>
-
+    <!-- 收藏夹 / 分类 -->
+    <sys:String x:Key="Nav_Collections">收藏夹</sys:String>
+    <sys:String x:Key="Btn_NewCollection">+ 新建收藏夹</sys:String>
+    <sys:String x:Key="Fmt_BackCollection">返回收藏夹  |  {0}</sys:String>
+    <sys:String x:Key="Fmt_CollectionCount">{0} 首歌曲</sys:String>
+    <sys:String x:Key="Tip_SetCollectionBg">设定收藏夹专属背景与封面</sys:String>
+    <sys:String x:Key="Tip_ResetCollectionBg">恢复默认灰白封面</sys:String>
+    <sys:String x:Key="Tip_DeleteCollection">删除此收藏夹</sys:String>
+    <sys:String x:Key="Menu_AddToCollection">添加到收藏夹</sys:String>
+    <sys:String x:Key="Menu_NewCollectionAndAdd">+ 新建收藏夹并添加...</sys:String>
+    <sys:String x:Key="Menu_RemoveFromCollection">从此收藏夹移除</sys:String>
+    <sys:String x:Key="Dlg_NewCollectionTitle">新建收藏夹</sys:String>
+    <sys:String x:Key="Dlg_NewCollectionHint">输入收藏夹名称</sys:String>
+    <sys:String x:Key="Dlg_SelectCollectionBg">选择收藏夹专属背景与封面</sys:String>
+    <sys:String x:Key="Toast_AddedToCollection">已添加到「{0}」</sys:String>
+    <sys:String x:Key="Btn_AddSongsToCol">添加歌曲</sys:String>
+    <sys:String x:Key="Btn_RemoveSelectedSongs">移除所选</sys:String>
+    <sys:String x:Key="Dlg_SelectSongsTitle">选择要添加到「{0}」的歌曲</sys:String>
+    <sys:String x:Key="Fmt_SelectedCount">已选择 {0} 首</sys:String>
+    <sys:String x:Key="Btn_SelectAll">全选</sys:String>
+    <sys:String x:Key="Toast_AddedMultiToCollection">已添加 {0} 首歌曲到「{1}」</sys:String>
+    <sys:String x:Key="Toast_RemovedFromCollection">已移除 {0} 首歌曲</sys:String>
+    <sys:String x:Key="Btn_PlayInCollections">收藏夹顺序播放</sys:String>
+    <sys:String x:Key="Btn_ShuffleInCollections">收藏夹随机播放</sys:String>
+    <sys:String x:Key="Toast_NoSongsInCollections">所有收藏夹中暂无歌曲</sys:String>
+    <!--other-->
+    <sys:String x:Key="Btn_Confirm">确认</sys:String>
+    <sys:String x:Key="Btn_Cancel">取消</sys:String>
 </ResourceDictionary>

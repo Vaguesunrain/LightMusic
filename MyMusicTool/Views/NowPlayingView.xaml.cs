@@ -84,12 +84,13 @@ namespace MyMusicTool.Views
         public event Action? RequestClose;
         public event Action? RequestToggleFullscreen;
         public event Action<ProgressLineStyle>? LineStyleChanged;
-
-        public NowPlayingView(AudioPlayerService player)
+        private readonly CollectionService _collections;
+        public NowPlayingView(AudioPlayerService player, CollectionService collections)
         {
             InitializeComponent();
             _player = player;
-
+            _collections = collections;
+            _collections.ActiveCollectionChanged += OnActiveCollectionChanged;
             ProgressSlider.AddHandler(PreviewMouseLeftButtonDownEvent,
                 new MouseButtonEventHandler(ProgressSlider_PreviewMouseDown), true);
             ProgressSlider.AddHandler(PreviewMouseLeftButtonUpEvent,
@@ -140,6 +141,7 @@ namespace MyMusicTool.Views
             VolumeIcon.Kind = _player.IsMuted ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
             UpdateShuffleAndRepeatIcons();
             UpdateQueueCountText();
+            LoadCustomBackground();
         }
 
         private void SetActiveLyricIndex(int newIndex, bool snapImmediately = false)
@@ -362,13 +364,33 @@ namespace MyMusicTool.Views
 
         private void ClearQueue_Click(object sender, RoutedEventArgs e) => _player.ClearQueue();
 
+        private void OnActiveCollectionChanged(CollectionItem? col)
+                    => Dispatcher.InvokeAsync(LoadCustomBackground);
+
         private void LoadCustomBackground()
         {
             try
             {
-                if (!File.Exists(BgConfigPath)) return;
-                string imgPath = File.ReadAllText(BgConfigPath).Trim();
-                if (!File.Exists(imgPath)) return;
+                string? imgPath = null;
+
+                // 1. 优先使用当前播放所属收藏夹的专属背景
+                var activeCol = _collections.ActivePlayingCollection;
+                if (activeCol != null && activeCol.HasCustomBackground)
+                {
+                    imgPath = activeCol.BackgroundImagePath;
+                }
+                // 2. 否则回退到全局自定义背景
+                else if (File.Exists(BgConfigPath))
+                {
+                    string globalPath = File.ReadAllText(BgConfigPath).Trim();
+                    if (File.Exists(globalPath)) imgPath = globalPath;
+                }
+
+                if (string.IsNullOrEmpty(imgPath))
+                {
+                    CustomBgImage.Source = null;
+                    return;
+                }
 
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
@@ -379,7 +401,10 @@ namespace MyMusicTool.Views
                 bitmap.Freeze();
                 CustomBgImage.Source = bitmap;
             }
-            catch { }
+            catch
+            {
+                CustomBgImage.Source = null;
+            }
         }
 
         private void SelectCustomBg_Click(object sender, RoutedEventArgs e)
@@ -459,6 +484,7 @@ namespace MyMusicTool.Views
         }
         public void CleanupResources()
         {
+            _collections.ActiveCollectionChanged -= OnActiveCollectionChanged;
             SizeChanged -= NowPlayingView_SizeChanged;
             _player.SongChanged -= OnSongChanged;
             _player.PlayStateChanged -= OnPlayStateChanged;

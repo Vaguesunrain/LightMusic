@@ -59,7 +59,7 @@ namespace MyMusicTool
         public MainWindow()
         {
             InitializeComponent();
-
+            InitCollectionsSupport();
             ProgressSlider.AddHandler(PreviewMouseLeftButtonDownEvent,
                 new MouseButtonEventHandler(MainProgressSlider_PreviewMouseDown), true);
             ProgressSlider.AddHandler(PreviewMouseLeftButtonUpEvent,
@@ -251,14 +251,28 @@ namespace MyMusicTool
             var (songs, albums) = await _library.ScanFoldersAsync(_libraryFolders);
             _allSongs = songs;
             _allAlbums = albums;
-
+            SyncCollectionFirstSongCovers();
             EmptyStatePanel.Visibility = _allSongs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             ApplyFilterAndSort();
         }
 
         private void ApplyFilterAndSort()
         {
-            if (_allSongs.Count == 0 && TabFolders.IsChecked != true)
+            UpdateActionButtonsVisibility();
+            bool isCollectionsRoot = TabCollections.IsChecked == true && !_isInSubDetailView;
+            bool isCollectionDetail = _isInSubDetailView && _activeBrowsingCollection != null;
+
+            NewCollectionBtn.Visibility = isCollectionsRoot ? Visibility.Visible : Visibility.Collapsed;
+            PlayInCollectionsBtn.Visibility = isCollectionsRoot ? Visibility.Visible : Visibility.Collapsed;
+            ShuffleInCollectionsBtn.Visibility = isCollectionsRoot ? Visibility.Visible : Visibility.Collapsed;
+
+            PlayAllBtn.Visibility = isCollectionsRoot ? Visibility.Collapsed : Visibility.Visible;
+            ShuffleAllBtn.Visibility = isCollectionsRoot ? Visibility.Collapsed : Visibility.Visible;
+
+            ColAddSongsBtn.Visibility = isCollectionDetail ? Visibility.Visible : Visibility.Collapsed;
+            ColRemoveSongsBtn.Visibility = isCollectionDetail ? Visibility.Visible : Visibility.Collapsed;
+            SongsListView.SelectionMode = isCollectionDetail ? SelectionMode.Extended : SelectionMode.Single;
+            if (_allSongs.Count == 0 && TabFolders.IsChecked != true && TabCollections.IsChecked != true)
             {
                 AlbumsGridView.Visibility = Visibility.Collapsed;
                 SongsListView.Visibility = Visibility.Collapsed;
@@ -311,6 +325,20 @@ namespace MyMusicTool
                 FolderPathsListBox.ItemsSource = _libraryFolders.ToList();
                 ShowOnlyView(FoldersView);
             }
+            else if (TabCollections.IsChecked == true && !_isInSubDetailView)
+            {
+                NewCollectionBtn.Visibility = Visibility.Visible;
+                IEnumerable<CollectionItem> cols = _collections.Collections;
+                if (!string.IsNullOrEmpty(keyword))
+                    cols = cols.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+
+                cols = descending
+                    ? cols.OrderByDescending(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
+                    : cols.OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase);
+
+                CollectionsGridView.ItemsSource = cols.ToList();
+                ShowOnlyView(CollectionsGridView);
+            }
             else if (TabQueue.IsChecked == true)
             {
                 _currentSongListContext = _player.Queue.ToList();
@@ -350,12 +378,21 @@ namespace MyMusicTool
             SongsListView.Visibility = target == SongsListView ? Visibility.Visible : Visibility.Collapsed;
             ArtistsListView.Visibility = target == ArtistsListView ? Visibility.Visible : Visibility.Collapsed;
             FoldersView.Visibility = target == FoldersView ? Visibility.Visible : Visibility.Collapsed;
+            CollectionsGridView.Visibility = target == CollectionsGridView ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // ==================== 导航、点击与拖拽交互 ====================
 
+
         private void NavTab_Click(object sender, RoutedEventArgs e)
         {
+            bool inCollectionDetail = _isInSubDetailView && _activeBrowsingCollection != null;
+            NewCollectionBtn.Visibility = (TabCollections.IsChecked == true && !_isInSubDetailView)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            ColAddSongsBtn.Visibility = inCollectionDetail ? Visibility.Visible : Visibility.Collapsed;
+            ColRemoveSongsBtn.Visibility = inCollectionDetail ? Visibility.Visible : Visibility.Collapsed;
+            SongsListView.SelectionMode = inCollectionDetail ? SelectionMode.Extended : SelectionMode.Single;
             _isInSubDetailView = false;
             BackBtn.Visibility = Visibility.Collapsed;
             ApplyFilterAndSort();
@@ -400,6 +437,13 @@ namespace MyMusicTool
 
         private void BackBtn_Click(object sender, RoutedEventArgs e)
         {
+            bool inCollectionDetail = _isInSubDetailView && _activeBrowsingCollection != null;
+            NewCollectionBtn.Visibility = (TabCollections.IsChecked == true && !_isInSubDetailView)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            ColAddSongsBtn.Visibility = inCollectionDetail ? Visibility.Visible : Visibility.Collapsed;
+            ColRemoveSongsBtn.Visibility = inCollectionDetail ? Visibility.Visible : Visibility.Collapsed;
+            SongsListView.SelectionMode = inCollectionDetail ? SelectionMode.Extended : SelectionMode.Single;
             _isInSubDetailView = false;
             BackBtn.Visibility = Visibility.Collapsed;
             ApplyFilterAndSort();
@@ -410,6 +454,7 @@ namespace MyMusicTool
             if (SongsListView.SelectedItem is SongItem selected && SongsListView.ItemsSource is List<SongItem> list)
             {
                 int index = list.IndexOf(selected);
+                _collections.ExitPlayInCollectionsMode(_isInSubDetailView ? _activeBrowsingCollection : null);
                 if (index >= 0) _player.PlayQueue(list, index);
             }
         }
@@ -420,6 +465,7 @@ namespace MyMusicTool
             if (list.Count == 0) return;
             _player.IsShuffle = false;
             UpdateShuffleIcon();
+            _collections.ExitPlayInCollectionsMode(_isInSubDetailView ? _activeBrowsingCollection : null);
             _player.PlayQueue(list, 0);
         }
 
@@ -429,6 +475,7 @@ namespace MyMusicTool
             if (list.Count == 0) return;
             _player.IsShuffle = true;
             UpdateShuffleIcon();
+            _collections.ExitPlayInCollectionsMode(_isInSubDetailView ? _activeBrowsingCollection : null);
             _player.PlayQueue(list, Random.Shared.Next(list.Count));
         }
 
@@ -506,6 +553,7 @@ namespace MyMusicTool
 
         private void OnSongChanged(SongItem? song)
         {
+            _collections.ResolveAndSyncActiveCollection(song?.FilePath);
             _lastLyricIndex = -2;
             if (song == null) return;
 
@@ -643,7 +691,7 @@ namespace MyMusicTool
 
             if (_nowPlayingView == null)
             {
-                _nowPlayingView = new NowPlayingView(_player);
+                _nowPlayingView = new NowPlayingView(_player, _collections);
                 _nowPlayingView.RequestClose += CloseFullPlayerView;
                 _nowPlayingView.RequestToggleFullscreen += ToggleFullscreen;
                 _nowPlayingView.LineStyleChanged += style => _currentLineStyle = style;

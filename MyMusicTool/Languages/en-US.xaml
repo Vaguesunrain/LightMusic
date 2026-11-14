@@ -82,5 +82,32 @@
     <sys:String x:Key="Tip_Fullscreen">Fullscreen / Exit (F11 / Esc)</sys:String>
     <sys:String x:Key="Fmt_QueueCount">Play Queue ({0})</sys:String>
     <sys:String x:Key="Btn_ClearQueue">Clear</sys:String>
-
+    <!-- Collections -->
+    <sys:String x:Key="Nav_Collections">Collections</sys:String>
+    <sys:String x:Key="Btn_NewCollection">+ New Collection</sys:String>
+    <sys:String x:Key="Fmt_BackCollection">Collections  |  {0}</sys:String>
+    <sys:String x:Key="Fmt_CollectionCount">{0} songs</sys:String>
+    <sys:String x:Key="Tip_SetCollectionBg">Set custom background &amp; cover</sys:String>
+    <sys:String x:Key="Tip_ResetCollectionBg">Reset to default monochrome cover</sys:String>
+    <sys:String x:Key="Tip_DeleteCollection">Delete collection</sys:String>
+    <sys:String x:Key="Menu_AddToCollection">Add to Collection</sys:String>
+    <sys:String x:Key="Menu_NewCollectionAndAdd">+ New Collection &amp; Add...</sys:String>
+    <sys:String x:Key="Menu_RemoveFromCollection">Remove from Collection</sys:String>
+    <sys:String x:Key="Dlg_NewCollectionTitle">New Collection</sys:String>
+    <sys:String x:Key="Dlg_NewCollectionHint">Enter collection name </sys:String>
+    <sys:String x:Key="Dlg_SelectCollectionBg">Select Custom Background &amp; Cover</sys:String>
+    <sys:String x:Key="Toast_AddedToCollection">Added to "{0}"</sys:String>
+    <sys:String x:Key="Btn_AddSongsToCol">Add Songs</sys:String>
+    <sys:String x:Key="Btn_RemoveSelectedSongs">Remove Selected</sys:String>
+    <sys:String x:Key="Dlg_SelectSongsTitle">Add songs to "{0}"</sys:String>
+    <sys:String x:Key="Fmt_SelectedCount">{0} selected</sys:String>
+    <sys:String x:Key="Btn_SelectAll">Select All</sys:String>
+    <sys:String x:Key="Toast_AddedMultiToCollection">Added {0} songs to "{1}"</sys:String>
+    <sys:String x:Key="Toast_RemovedFromCollection">Removed {0} songs</sys:String>
+    <sys:String x:Key="Btn_PlayInCollections">Play in Collections</sys:String>
+    <sys:String x:Key="Btn_ShuffleInCollections">Shuffle in Collections</sys:String>
+    <sys:String x:Key="Toast_NoSongsInCollections">No songs in any collection yet</sys:String>
+    <!--other-->
+    <sys:String x:Key="Btn_Confirm">Confirm</sys:String>
+    <sys:String x:Key="Btn_Cancel">Cancel</sys:String>
 </ResourceDictionary>

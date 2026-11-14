@@ -5,6 +5,7 @@
         xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
         xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
         xmlns:controls="clr-namespace:MyMusicTool.Controls"
+        
         Title="LightMusic"
         Width="1120"
         Height="740"
@@ -52,7 +53,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
+        
         <!-- 扁平轻量化工具按钮 -->
         <Style x:Key="FlatActionBtnStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -108,6 +109,7 @@
                     <RadioButton x:Name="TabSongs" Content="{DynamicResource Nav_Songs}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
                     <RadioButton x:Name="TabArtists" Content="{DynamicResource Nav_Artists}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
                     <RadioButton x:Name="TabFolders" Content="{DynamicResource Nav_Folders}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
+                    <RadioButton x:Name="TabCollections" Content="{DynamicResource Nav_Collections}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
                     <RadioButton x:Name="TabQueue" Content="{DynamicResource Nav_Queue}" Style="{StaticResource NavTabStyle}" Click="NavTab_Click" />
                 </StackPanel>
 
@@ -269,21 +271,65 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource FlatActionBtnStyle}" Click="PlayAll_Click" Margin="0,0,6,0">
+                    <!-- 原有通用按钮：加上 x:Name 以便在收藏夹一级页面动态隐藏 -->
+                    <Button x:Name="PlayAllBtn" Style="{StaticResource FlatActionBtnStyle}" Click="PlayAll_Click" Margin="0,0,6,0">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Play" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,4,0" />
                             <TextBlock Text="{DynamicResource Btn_PlayAll}" FontSize="13" />
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource FlatActionBtnStyle}" Click="ShuffleAll_Click">
+                    <Button x:Name="ShuffleAllBtn" Style="{StaticResource FlatActionBtnStyle}" Click="ShuffleAll_Click">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Shuffle" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0" />
                             <TextBlock Text="{DynamicResource Btn_ShuffleAll}" FontSize="13" />
                         </StackPanel>
                     </Button>
-                </StackPanel>
 
+                    <!-- 收藏夹一级页面专用：Play in Collections & Shuffle in Collections -->
+                    <Button x:Name="PlayInCollectionsBtn" Visibility="Collapsed" Style="{StaticResource FlatActionBtnStyle}" Click="PlayInCollections_Click" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="PlayBoxMultipleOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,4,0" />
+                            <TextBlock Text="{DynamicResource Btn_PlayInCollections}" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="ShuffleInCollectionsBtn" Visibility="Collapsed" Style="{StaticResource FlatActionBtnStyle}" Click="ShuffleInCollections_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ShuffleVariant" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0" />
+                            <TextBlock Text="{DynamicResource Btn_ShuffleInCollections}" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="NewCollectionBtn"
+     Visibility="Collapsed"
+     Style="{StaticResource FlatActionBtnStyle}"
+     Margin="0,0,8,0"
+     Click="NewCollection_Click">
+                        <TextBlock Text="{DynamicResource Btn_NewCollection}" FontWeight="SemiBold" FontSize="13" Foreground="#1E293B" />
+                    </Button>
+                    <Button x:Name="ColAddSongsBtn"
+     Visibility="Collapsed"
+     Style="{StaticResource FlatActionBtnStyle}"
+     Margin="0,0,6,0"
+     Click="ColAddSongs_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Plus" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#0F172A" />
+                            <TextBlock Text="{DynamicResource Btn_AddSongsToCol}" FontWeight="SemiBold" FontSize="13" Foreground="#0F172A" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="ColRemoveSongsBtn"
+         Visibility="Collapsed"
+         Style="{StaticResource FlatActionBtnStyle}"
+         Margin="0,0,8,0"
+         Click="ColRemoveSongs_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Minus" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#EF4444" />
+                            <TextBlock Text="{DynamicResource Btn_RemoveSelectedSongs}" FontWeight="SemiBold" FontSize="13" Foreground="#EF4444" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                
                 <!-- 右侧排序选项 -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <TextBlock Text="{DynamicResource Label_SortBy}" FontSize="12.5" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -339,6 +385,7 @@
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          VirtualizingPanel.IsVirtualizing="True"
                          VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.ScrollUnit="Pixel"
                          SelectionChanged="AlbumsGridView_SelectionChanged">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -409,12 +456,19 @@
 
                 <!-- 3C. 虚拟化歌曲列表视图（用于“歌曲”、专辑详情、播放队列） -->
                 <ListBox x:Name="SongsListView"
+                          AlternationCount="1000000"
                          Visibility="Collapsed"
                          Background="Transparent"
                          BorderThickness="0"
                          VirtualizingPanel.IsVirtualizing="True"
                          VirtualizingPanel.VirtualizationMode="Recycling"
-                         MouseDoubleClick="SongsListView_MouseDoubleClick">
+                         MouseDoubleClick="SongsListView_MouseDoubleClick"
+                         ContextMenuOpening="SongsListView_ContextMenuOpening"
+                       
+                         >
+                    <ListBox.ContextMenu>
+                        <ContextMenu/>
+                    </ListBox.ContextMenu>
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -443,15 +497,21 @@
                         <DataTemplate>
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="38" />
                                     <ColumnDefinition Width="2.2*" />
                                     <ColumnDefinition Width="1.4*" />
                                     <ColumnDefinition Width="1.5*" />
                                     <ColumnDefinition Width="65" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="#1E293B" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
-                                <TextBlock Grid.Column="1" Text="{Binding Artist}" FontSize="12.5" Foreground="#475569" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
-                                <TextBlock Grid.Column="2" Text="{Binding Album}" FontSize="12.5" Foreground="#64748B" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
-                                <TextBlock Grid.Column="3" Text="{Binding DurationText}" FontSize="12" Foreground="#64748B" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Column="0"
+                                   Text="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                                   FontSize="12"
+                                   Foreground="#94A3B8"
+                                   VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="#1E293B" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding Artist}" FontSize="12.5" Foreground="#475569" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="3" Text="{Binding Album}" FontSize="12.5" Foreground="#64748B" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="4" Text="{Binding DurationText}" FontSize="12" Foreground="#64748B" HorizontalAlignment="Right" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -474,9 +534,134 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <!-- 3F. 虚拟化收藏夹卡片墙（Material You 动态取色卡片） -->
+                <ListBox x:Name="CollectionsGridView"
+                     Visibility="Collapsed"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     SelectionChanged="CollectionsGridView_SelectionChanged">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vwp:VirtualizingWrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <!-- 替换 CollectionsGridView 的 ItemContainerStyle 与 ItemTemplate -->
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="8" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="CardBorder"
+                            Width="216"
+                            Background="{Binding CardBgBrush}"
+                            BorderBrush="#1A000000"
+                            BorderThickness="1"
+                            CornerRadius="16"
+                            Padding="10,10,10,14">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#4D000000" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <!-- 放大后的 196x196 1:1 正方形圆角封面 -->
+                                <Border Width="196" Height="196" CornerRadius="12" Background="#14000000" ClipToBounds="True">
+                                    <Grid>
+                                        <materialDesign:PackIcon Kind="MusicBoxMultipleOutline"
+                                             Width="48" Height="48"
+                                             Foreground="{Binding AccentBrush}"
+                                             Opacity="0.55"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center" />
+                                        <Image Source="{Binding CoverImage}"
+                           Stretch="UniformToFill"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
 
+                                        <!-- 右上角悬浮快捷操作条 -->
+                                        <Border HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="8"
+                            CornerRadius="9"
+                            Background="#D9FFFFFF"
+                            Padding="3">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource FlatActionBtnStyle}"
+                                    Padding="6"
+                                    Tag="{Binding}"
+                                    ToolTip="{DynamicResource Tip_SetCollectionBg}"
+                                    Click="SetCollectionBg_Click">
+                                                    <materialDesign:PackIcon Kind="ImageEditOutline" Width="16" Height="16" Foreground="#1E293B" />
+                                                </Button>
+                                                <Button Style="{StaticResource FlatActionBtnStyle}"
+                                    Padding="6"
+                                    Tag="{Binding}"
+                                    ToolTip="{DynamicResource Tip_ResetCollectionBg}"
+                                    Click="ResetCollectionBg_Click">
+                                                    <materialDesign:PackIcon Kind="ImageOffOutline" Width="16" Height="16" Foreground="#475569" />
+                                                </Button>
+                                                <Button Style="{StaticResource FlatActionBtnStyle}"
+                                    Padding="6"
+                                    Tag="{Binding}"
+                                    ToolTip="{DynamicResource Tip_DeleteCollection}"
+                                    Click="DeleteCollection_Click">
+                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" Foreground="#EF4444" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 收藏夹名称 -->
+                                <TextBlock Text="{Binding Name}"
+                       FontWeight="Bold"
+                       FontSize="15"
+                       Foreground="{Binding TextBrush}"
+                       TextTrimming="CharacterEllipsis"
+                       Margin="4,10,4,3" />
+
+                                <!-- 歌曲数量 -->
+                                <TextBlock Text="{Binding SongCountText}"
+                       FontSize="12.5"
+                       Foreground="{Binding AccentBrush}"
+                       TextTrimming="CharacterEllipsis"
+                       Margin="4,0,4,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 轻量化 Toast 提示条（如：已添加到「深夜编码」） -->
+                <Border x:Name="ToastBorder"
+Visibility="Collapsed"
+HorizontalAlignment="Center"
+VerticalAlignment="Bottom"
+Margin="0,0,0,18"
+Background="#E61E293B"
+CornerRadius="20"
+Padding="18,8"
+IsHitTestVisible="False"
+Panel.ZIndex="40">
+                    <TextBlock x:Name="ToastText" Foreground="White" FontSize="12.5" FontWeight="SemiBold" />
+                </Border>
                 <!-- 3E. 文件夹管理视图 -->
                 <StackPanel x:Name="FoldersView" Visibility="Collapsed" Margin="8">
+             
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                         <Button Content="{DynamicResource Btn_AddFolderPlus}"
                                 Style="{StaticResource MaterialDesignFlatMidBgButton}"
