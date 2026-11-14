@@ -25,6 +25,7 @@ Download the latest build from the [Releases](../../releases) page:
 - **UI Framework**: WPF (.NET 8.0) & MaterialDesignInXamlToolkit
 - **Audio Engine**: `libmpv-2.dll` (supports FLAC, MP3, AAC, WAV, APE, ALAC, and other lossless/lossy formats)
 <img width="1087" height="720" alt="image" src="https://github.com/user-attachments/assets/f1c85989-0d9d-4b68-a049-9dc769d499e1" />
+<img width="1089" height="723" alt="image" src="https://github.com/user-attachments/assets/58bcfc12-e906-4703-86e0-bc20ed98ead9" />
 <img width="1093" height="721" alt="image" src="https://github.com/user-attachments/assets/22f21c95-a366-42b3-8ee5-01a2e310815f" />
 <img width="570" height="45" alt="image" src="https://github.com/user-attachments/assets/0d25ebc7-c563-4f83-9ade-20b6432e7528" />
-<img width="1089" height="723" alt="image" src="https://github.com/user-attachments/assets/58bcfc12-e906-4703-86e0-bc20ed98ead9" />
+
