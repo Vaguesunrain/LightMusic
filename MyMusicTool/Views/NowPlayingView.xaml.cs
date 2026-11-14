@@ -100,6 +100,7 @@ namespace MyMusicTool.Views
             _player.SongChanged += OnSongChanged;
             _player.PlayStateChanged += OnPlayStateChanged;
             _player.Queue.CollectionChanged += Queue_CollectionChanged;
+            _player.VolumeChanged += OnVolumeChanged;
 
             QueueListBox.ItemsSource = _player.Queue;
             UpdateQueueCountText();
@@ -445,13 +446,24 @@ namespace MyMusicTool.Views
         {
             if (_player != null) _player.Volume = (float)VolumeSlider.Value;
         }
-
+        private void OnVolumeChanged(float volume, bool isMuted)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (Math.Abs(VolumeSlider.Value - volume) > 0.005)
+                {
+                    VolumeSlider.Value = volume;
+                }
+                VolumeIcon.Kind = isMuted ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
+            });
+        }
         public void CleanupResources()
         {
             SizeChanged -= NowPlayingView_SizeChanged;
             _player.SongChanged -= OnSongChanged;
             _player.PlayStateChanged -= OnPlayStateChanged;
             _player.Queue.CollectionChanged -= Queue_CollectionChanged;
+            _player.VolumeChanged -= OnVolumeChanged;
             QueueListBox.ItemsSource = null;
             CustomBgImage.Source = null;
             LargeCoverImage.Source = null;

@@ -68,6 +68,7 @@ namespace MyMusicTool
             // 绑定播放器事件（使用 Dispatcher 确保跨线程自动切歌时安全刷新 UI）
             _player.SongChanged += song => Dispatcher.InvokeAsync(() => OnSongChanged(song));
             _player.PlayStateChanged += playing => Dispatcher.InvokeAsync(() => OnPlayStateChanged(playing));
+            _player.VolumeChanged += (vol, muted) => Dispatcher.InvokeAsync(() => OnVolumeChanged(vol, muted));
             _player.ThemeColorsChanged += (primary, bg) => Dispatcher.InvokeAsync(() => OnThemeColorsChanged(primary, bg));
 
             _progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -80,6 +81,14 @@ namespace MyMusicTool
             PreviewKeyDown += MainWindow_PreviewKeyDown;
             Loaded += MainWindow_Loaded;
             Closed += MainWindow_Closed;
+        }
+        private void OnVolumeChanged(float volume, bool isMuted)
+        {
+            if (Math.Abs(VolumeSlider.Value - volume) > 0.005)
+            {
+                VolumeSlider.Value = volume;
+            }
+            VolumeIcon.Kind = isMuted ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
         }
         // lauguage change
         private void LangToggleBtn_Click(object sender, RoutedEventArgs e)

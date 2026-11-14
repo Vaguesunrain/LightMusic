@@ -16,14 +16,21 @@
             <!-- 阻止 MD3 覆盖自定义进度条样式 -->
             <Style TargetType="{x:Type controls:ExpressiveProgressSlider}">
                 <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Cursor" Value="Hand" />
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type controls:ExpressiveProgressSlider}">
                             <Grid Background="Transparent" SnapsToDevicePixels="True">
                                 <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Opacity="0" IsTabStop="False" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Opacity="0" IsTabStop="False" />
+                                    </Track.IncreaseRepeatButton>
                                     <Track.Thumb>
-                                        <Thumb Width="16" Height="22" Opacity="0" />
+                                        <Thumb Width="20" Height="24" Opacity="0" />
                                     </Track.Thumb>
                                 </Track>
                             </Grid>
@@ -44,6 +51,7 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+           
         </ResourceDictionary>
     </Application.Resources>
 </Application>

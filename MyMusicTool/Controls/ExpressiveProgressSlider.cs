@@ -81,6 +81,9 @@ namespace MyMusicTool.Controls
 
         public ExpressiveProgressSlider()
         {
+            ValueChanged += (_, _) => InvalidateVisual();
+            MouseEnter += (_, _) => InvalidateVisual();
+            MouseLeave += (_, _) => InvalidateVisual();
             IsVisibleChanged += (_, _) => UpdateAnimationHook();
             Unloaded += (_, _) => DetachRendering();
         }

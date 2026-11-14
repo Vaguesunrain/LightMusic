@@ -90,15 +90,18 @@ namespace MyMusicTool.Services
 
         public bool IsShuffle { get; set; }
         public RepeatMode RepeatMode { get; set; } = RepeatMode.ListLoop;
-
+        public event Action<float, bool>? VolumeChanged;
         private float _volume = 0.8f;
         public float Volume
         {
             get => _volume;
             set
             {
-                _volume = Math.Clamp(value, 0f, 1f);
+                float clamped = Math.Clamp(value, 0f, 1f);
+                if (Math.Abs(_volume - clamped) < 0.001f) return;
+                _volume = clamped;
                 SetMpvProperty("volume", (_volume * 100.0).ToString("F1", CultureInfo.InvariantCulture));
+                VolumeChanged?.Invoke(_volume, _isMuted);
             }
         }
 
@@ -108,8 +111,11 @@ namespace MyMusicTool.Services
             get => _isMuted;
             set
             {
+                if (_isMuted == value) return;
+    
                 _isMuted = value;
                 SetMpvProperty("mute", _isMuted ? "yes" : "no");
+                VolumeChanged?.Invoke(_volume, _isMuted);
             }
         }
 
