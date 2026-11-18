@@ -1,9 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using MaterialDesignThemes.Wpf;
 
 namespace MyMusicTool.Views
 {
@@ -25,8 +28,17 @@ namespace MyMusicTool.Views
     public partial class LyricOverlayWindow : Window
     {
         private const int GWL_EXSTYLE = -20;
-        private const int WS_EX_TRANSPARENT = 0x00000020;
         private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_NOACTIVATE = 0x08000000;
+
+        private static readonly Brush HoverFallbackBgBrush = CreateFrozenBrush(215, 26, 28, 30);
+
+        private static Brush CreateFrozenBrush(byte a, byte r, byte g, byte b)
+        {
+            var brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
+            brush.Freeze();
+            return brush;
+        }
 
         [DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hwnd, int index);
@@ -34,8 +46,15 @@ namespace MyMusicTool.Views
         [DllImport("user32.dll")]
         private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
 
+        public event Action? PreviousClicked;
+        public event Action? PlayPauseClicked;
+        public event Action? NextClicked;
+
         private string _lastDisplayedRaw = string.Empty;
         private string _currentCoverPath = string.Empty;
+        private Brush _normalBgBrush = CreateFrozenBrush(204, 26, 28, 30);
+        private bool _isHovered;
+
         public LyricSettings Settings { get; private set; } = new();
 
         public LyricOverlayWindow()
@@ -50,8 +69,45 @@ namespace MyMusicTool.Views
             base.OnSourceInitialized(e);
             var hwnd = new WindowInteropHelper(this).Handle;
             int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+            // 移除 WS_EX_TRANSPARENT 以便接收鼠标悬停与点击；加入 WS_EX_NOACTIVATE 防止点击抢焦点
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
         }
+
+        /// <summary>
+        /// 同步主播放器的播放/暂停图标状态
+        /// </summary>
+        public void UpdatePlayState(bool isPlaying)
+            => OverlayPlayPauseIcon.Kind = isPlaying ? PackIconKind.Pause : PackIconKind.Play;
+
+        // ==================== 鼠标悬停切换播控按钮 ====================
+
+        private void LyricPillBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            _isHovered = true;
+            LyricTextPanel.Opacity = 0;
+            LyricTextPanel.IsHitTestVisible = false;
+            HoverControlsPanel.Visibility = Visibility.Visible;
+
+            if (Settings.BackgroundOpacity < 0.35)
+            {
+                LyricPillBorder.Background = HoverFallbackBgBrush;
+            }
+        }
+
+        private void LyricPillBorder_MouseLeave(object sender, MouseEventArgs e)
+        {
+            _isHovered = false;
+            HoverControlsPanel.Visibility = Visibility.Collapsed;
+            LyricTextPanel.Opacity = 1;
+            LyricTextPanel.IsHitTestVisible = true;
+            LyricPillBorder.Background = _normalBgBrush;
+        }
+
+        private void PrevBtn_Click(object sender, RoutedEventArgs e) => PreviousClicked?.Invoke();
+        private void PlayPauseBtn_Click(object sender, RoutedEventArgs e) => PlayPauseClicked?.Invoke();
+        private void NextBtn_Click(object sender, RoutedEventArgs e) => NextClicked?.Invoke();
+
+        // ==================== 外观设置与歌词刷新 ====================
 
         /// <summary>
         /// 应用外观配置（字体、字号、底色透明度、低清封面开关、坐标偏移）
@@ -73,9 +129,11 @@ namespace MyMusicTool.Views
 
             // 更新胶囊背景透明度（0 时完全透明）
             byte alpha = (byte)(Math.Clamp(settings.BackgroundOpacity, 0, 1) * 255);
-            var bgBrush = new SolidColorBrush(Color.FromArgb(alpha, 26, 28, 30));
-            bgBrush.Freeze();
-            LyricPillBorder.Background = bgBrush;
+            _normalBgBrush = CreateFrozenBrush(alpha, 26, 28, 30);
+            if (!_isHovered)
+            {
+                LyricPillBorder.Background = _normalBgBrush;
+            }
 
             // 若关闭颜色过渡，重置渐变偏移为全白
             if (!settings.EnableColorProgress)
@@ -181,7 +239,6 @@ namespace MyMusicTool.Views
         /// </summary>
         public void UpdateAccentColor(Color accentColor)
         {
-            // 提亮主色调，确保在深色胶囊背景上高对比度清晰可见
             Color brightAccent = Color.FromRgb(
                 (byte)Math.Min(255, accentColor.R + 85),
                 (byte)Math.Min(255, accentColor.G + 85),
@@ -191,9 +248,7 @@ namespace MyMusicTool.Views
 
             if (Settings.BackgroundOpacity > 0.05)
             {
-                var borderBrush = new SolidColorBrush(Color.FromArgb(140, accentColor.R, accentColor.G, accentColor.B));
-                borderBrush.Freeze();
-                LyricPillBorder.BorderBrush = borderBrush;
+                LyricPillBorder.BorderBrush = CreateFrozenBrush(140, accentColor.R, accentColor.G, accentColor.B);
             }
             else
             {

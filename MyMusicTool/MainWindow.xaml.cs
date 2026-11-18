@@ -59,6 +59,9 @@ namespace MyMusicTool
         public MainWindow()
         {
             InitializeComponent();
+            _lyricWindow.PreviousClicked += () => _player.PlayPrevious();
+            _lyricWindow.PlayPauseClicked += () => _player.TogglePlayPause();
+            _lyricWindow.NextClicked += () => _player.PlayNext();
             InitCollectionsSupport();
             ProgressSlider.AddHandler(PreviewMouseLeftButtonDownEvent,
                 new MouseButtonEventHandler(MainProgressSlider_PreviewMouseDown), true);
@@ -576,6 +579,7 @@ namespace MyMusicTool
             PlayPauseIcon.Kind = isPlaying ? PackIconKind.Pause : PackIconKind.Play;
             PlayPauseBtn.IsPlaying = isPlaying;
             ProgressSlider.IsAnimating = isPlaying;
+            _lyricWindow.UpdatePlayState(isPlaying);
         }
 
         private void OnThemeColorsChanged(Color primary, Color bottomBarBg)
